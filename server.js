@@ -7,6 +7,9 @@ const PORT = 3000;
 // Middleware för att kunna läsa JSON-data i anrop
 app.use(express.json());
 
+// Gör så att servern kan läsa filer (HTML, CSS, JS) från en mapp som heter "public"
+app.use(express.static('public'));
+
 // Anslut till (eller skapa) lokal SQLite-databas
 const db = new sqlite3.Database('./database.sqlite', (err) => {
     if (err) {
@@ -58,9 +61,7 @@ app.get('/', (req, res) => {
     res.send('StudySpot API är igång!');
 });
 
-// ==========================================
 // ROOMS API (CRUD)
-// ==========================================
 
 // 1. Hämta alla studierum (GET)
 app.get('/api/rooms', (req, res) => {
@@ -101,9 +102,7 @@ app.post('/api/rooms', (req, res) => {
     });
 });
 
-// ==========================================
 // USERS API
-// ==========================================
 
 app.post('/api/users', (req, res) => {
     const { username, role } = req.body;
@@ -128,9 +127,7 @@ app.post('/api/users', (req, res) => {
     });
 });
 
-// ==========================================
 // BOOKINGS API (CRUD)
-// ==========================================
 
 app.get('/api/bookings', (req, res) => {
     const sql = `
