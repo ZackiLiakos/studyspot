@@ -58,6 +58,48 @@ app.get('/', (req, res) => {
     res.send('StudySpot API är igång!');
 });
 
+// ROOMS API (CRUD)
+
+// 1. Hämta alla studierum (GET)
+app.get('/api/rooms', (req, res) => {
+    const sql = 'SELECT * FROM rooms';
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'success',
+            data: rows
+        });
+    });
+});
+
+// 2. Lägg till ett nytt studierum (POST)
+app.post('/api/rooms', (req, res) => {
+    const { name, capacity, features } = req.body;
+    
+    // Enkel validering
+    if (!name || !capacity) {
+        res.status(400).json({ error: 'Name and Capacity is mandatory' });
+        return;
+    }
+
+    const sql = 'INSERT INTO rooms (name, capacity, features) VALUES (?, ?, ?)';
+    const params = [name, capacity, features];
+
+    db.run(sql, params, function (err) {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'success',
+            data: { id: this.lastID, name, capacity, features }
+        });
+    });
+});
+
 // Starta servern
 app.listen(PORT, () => {
     console.log(`Servern körs på http://localhost:${PORT}`);
