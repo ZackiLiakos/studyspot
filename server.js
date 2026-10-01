@@ -58,7 +58,9 @@ app.get('/', (req, res) => {
     res.send('StudySpot API är igång!');
 });
 
+// ==========================================
 // ROOMS API (CRUD)
+// ==========================================
 
 // 1. Hämta alla studierum (GET)
 app.get('/api/rooms', (req, res) => {
@@ -79,9 +81,8 @@ app.get('/api/rooms', (req, res) => {
 app.post('/api/rooms', (req, res) => {
     const { name, capacity, features } = req.body;
     
-    // Enkel validering
     if (!name || !capacity) {
-        res.status(400).json({ error: 'Name and Capacity is mandatory' });
+        res.status(400).json({ error: 'Name and capacity is mandatory!' });
         return;
     }
 
@@ -96,6 +97,79 @@ app.post('/api/rooms', (req, res) => {
         res.json({
             message: 'success',
             data: { id: this.lastID, name, capacity, features }
+        });
+    });
+});
+
+// ==========================================
+// USERS API
+// ==========================================
+
+app.post('/api/users', (req, res) => {
+    const { username, role } = req.body;
+    
+    if (!username) {
+        res.status(400).json({ error: 'Username is mandatory!' });
+        return;
+    }
+
+    const sql = 'INSERT INTO users (username, role) VALUES (?, ?)';
+    const params = [username, role || 'user'];
+
+    db.run(sql, params, function (err) {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'success',
+            data: { id: this.lastID, username, role: role || 'user' }
+        });
+    });
+});
+
+// ==========================================
+// BOOKINGS API (CRUD)
+// ==========================================
+
+app.get('/api/bookings', (req, res) => {
+    const sql = `
+        SELECT bookings.id, bookings.date, users.username, rooms.name AS room_name 
+        FROM bookings
+        JOIN users ON bookings.user_id = users.id
+        JOIN rooms ON bookings.room_id = rooms.id
+    `;
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'success',
+            data: rows
+        });
+    });
+});
+
+app.post('/api/bookings', (req, res) => {
+    const { user_id, room_id, date } = req.body;
+
+    if (!user_id || !room_id || !date) {
+        res.status(400).json({ error: 'user_id, room_id och date is mandatory!' });
+        return;
+    }
+
+    const sql = 'INSERT INTO bookings (user_id, room_id, date) VALUES (?, ?, ?)';
+    const params = [user_id, room_id, date];
+
+    db.run(sql, params, function (err) {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'success',
+            data: { id: this.lastID, user_id, room_id, date }
         });
     });
 });
