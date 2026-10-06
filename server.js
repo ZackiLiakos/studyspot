@@ -64,10 +64,10 @@ function seedData() {
             db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E1212', 4, 'Quiet area', 1)`);
             db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E1213', 10, 'Projector, Whiteboard', 1)`);
             db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E1214', 8, 'Whiteboard', 1)`);
-            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2211', 4, 'Quiet area', 2)`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2211', 6 'Quiet area', 2)`);
             db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2212', 2, 'Projector', 2)`);
             db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2213', 4, 'Quiet area', 2)`);
-            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2214', 2, 'Projector', 2)`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2214', 8 'Projector', 2)`);
 
             console.log('Testrum tillagda med våningsplan!');
         }
