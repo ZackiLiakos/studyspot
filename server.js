@@ -187,6 +187,35 @@ app.get('/api/bookings/date/:date', (req, res) => {
     });
 });
 
+// 8. Hämta bokningar för en specifik användare (Krävs för "My Bookings")
+app.get('/api/user-bookings/:username', (req, res) => {
+    const sql = `
+        SELECT bookings.id, bookings.date, bookings.time_slot, rooms.name AS room_name, users.username
+        FROM bookings
+        JOIN users ON bookings.user_id = users.id
+        JOIN rooms ON bookings.room_id = rooms.id
+        WHERE users.username = ?
+    `;
+    db.all(sql, [req.params.username], (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json(rows);
+    });
+});
+
+// 9. Ta bort (avboka) en bokning (Krävs för avbokningsknappen)
+app.delete('/api/bookings/:id', (req, res) => {
+    db.run("DELETE FROM bookings WHERE id = ?", [req.params.id], function(err) {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json({ success: true });
+    });
+});
+
 // Starta servern
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
