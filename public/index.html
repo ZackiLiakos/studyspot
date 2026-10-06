@@ -12,6 +12,27 @@
         <h1>StudySpot 📚</h1>
         <p>Find and book a study room on campus easily and smoothly.</p>
     </header>
+    
+<!-- Knapp uppe till höger -->
+<div style="text-align: right; margin-bottom: 15px;">
+  <button onclick="openMyBookings()" style="width: auto; padding: 8px 16px;">My Bookings 📅</button>
+</div>
+
+<!-- Pop-up-ruta för My Bookings (dold i början) -->
+<div id="bookingsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;">
+  <div style="background: white; padding: 25px; border-radius: 12px; max-width: 450px; width: 90%; text-align: center; position: relative;">
+    <button onclick="closeMyBookings()" style="position: absolute; top: 10px; right: 15px; width: auto; background: none; color: #333; font-size: 1.2rem; cursor: pointer;">✕</button>
+    
+    <h2>My Bookings 📚</h2>
+    <p style="margin-bottom: 15px;">Username:</p>
+    
+    <input type="text" id="modalUsername" placeholder="Ange användarnamn..." style="padding: 10px; width: 80%; border-radius: 20px; border: 1px solid #ccc; margin-bottom: 15px;">
+    <br>
+    <button onclick="fetchModalBookings()" style="width: auto; padding: 8px 20px;">Search bookings</button>
+
+    <div id="modalBookingsList" style="margin-top: 20px; text-align: left; max-height: 200px; overflow-y: auto;"></div>
+  </div>
+</div>
 
     <!-- Sök och datumväljare samlat här -->
     <div class="search-section">
