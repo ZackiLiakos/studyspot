@@ -62,7 +62,7 @@ function filterRooms() {
     displayRooms(filtered, selectedDateGlobal);
 }
 
-// Skriv ut rummen på skärmen
+// Skriv ut rummen på skärmen (sorterade och uppdelade per våning med streck)
 function displayRooms(rooms, selectedDate) {
     const roomList = document.getElementById('roomList');
     if (!roomList) return;
@@ -74,7 +74,39 @@ function displayRooms(rooms, selectedDate) {
         return;
     }
 
+    // 1. Sortera rummen: först efter våning, sedan alfabetiskt på namn
+    rooms.sort((a, b) => {
+        if (a.floor !== b.floor) {
+            return (a.floor || 0) - (b.floor || 0);
+        }
+        return a.name.localeCompare(b.name);
+    });
+
+    let currentFloor = null;
+
     rooms.forEach(room => {
+        // 2. Om våningen ändras, lägg till ett streck och en våningsrubrik
+        if (room.floor !== currentFloor) {
+            currentFloor = room.floor;
+            
+            // Lägg till ett avskiljande streck om det inte är det första våningsplanet
+            if (roomList.children.length > 0) {
+                const hr = document.createElement('hr');
+                hr.style.gridColumn = '1 / -1'; // Gör så strecket spänner över hela raden i griden
+                hr.style.margin = '30px 0 15px 0';
+                hr.style.border = '0';
+                hr.style.borderTop = '2px solid #ddd';
+                roomList.appendChild(hr);
+            }
+
+            const floorHeader = document.createElement('h2');
+            floorHeader.style.gridColumn = '1 / -1'; // Gör så rubriken spänner över hela raden
+            floorHeader.style.color = '#333';
+            floorHeader.style.marginTop = '10px';
+            floorHeader.textContent = currentFloor ? `Floor ${currentFloor}` : 'Other Rooms';
+            roomList.appendChild(floorHeader);
+        }
+
         const card = document.createElement('div');
         card.classList.add('room-card');
         
