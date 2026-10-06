@@ -35,6 +35,39 @@ function createTables() {
             features TEXT
         )`);
 
+        // Uppdaterad testdata med våningsplan
+function seedData() {
+    db.get("SELECT COUNT(*) as count FROM rooms", (err, row) => {
+        if (row && row.count === 0) {
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E1211', 6, 'Whiteboard', 1)`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E1212', 4, 'Quiet area', 1)`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E1213', 10, 'Projector, Whiteboard, 1')`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E1214', 8, 'Whiteboard', 1)`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2211', 4, 'Quiet area', 2)`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2212', 2, 'Projector, 2')`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2213', 4, 'Quiet area', 2)`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2214', 2, 'Projector. 2')`);
+            console.log('Testrum tillagda med våningsplan!');
+        }
+    });
+}
+
+// Uppdatera även POST-rutten för rum om ni lägger till nya via admin:
+app.post('/api/rooms', (req, res) => {
+    const { name, capacity, features, floor } = req.body;
+    const sql = 'INSERT INTO rooms (name, capacity, features, floor) VALUES (?, ?, ?, ?)';
+    db.run(sql, [name, capacity, features, floor], function (err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'success',
+            data: { id: this.lastID, name, capacity, features, floor }
+        });
+    });
+});
+
         // 3. Bokningstabell med kopplingar (Foreign Keys)
         db.run(`CREATE TABLE IF NOT EXISTS bookings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,9 +92,16 @@ function createTables() {
 function seedData() {
     db.get("SELECT COUNT(*) as count FROM rooms", (err, row) => {
         if (row && row.count === 0) {
-            db.run(`INSERT INTO rooms (name, capacity, features) VALUES ('Room A101', 6, 'Whiteboard')`);
-            db.run(`INSERT INTO rooms (name, capacity, features) VALUES ('Silent Room B', 4, 'Quiet area')`);
-            db.run(`INSERT INTO rooms (name, capacity, features) VALUES ('Group Lab C', 10, 'Projector, Whiteboard')`);
+          
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E1211', 6, 'Whiteboard', 1)`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E1212', 4, 'Quiet area', 1)`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E1213', 10, 'Projector, Whiteboard, 1')`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E1214', 8, 'Whiteboard', 1)`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2211', 4, 'Quiet area', 2)`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2212', 2, 'Projector, 2')`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2213', 4, 'Quiet area', 2)`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2214', 2, 'Projector. 2')`);
+
             console.log('Testrum tillagda i databasen!');
         }
     });
@@ -87,7 +127,7 @@ app.get('/api/rooms', (req, res) => {
 // 2. Lägg till ett rum (POST)
 app.post('/api/rooms', (req, res) => {
     const { name, capacity, features } = req.body;
-    const sql = 'INSERT INTO rooms (name, capacity, features) VALUES (?, ?, ?)';
+    const sql = 'INSERT INTO rooms (name, capacity, features, floor) VALUES (?, ?, ?)';
     const params = [name, capacity, features];
     
     db.run(sql, params, function (err) {
