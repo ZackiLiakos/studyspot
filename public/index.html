@@ -7,25 +7,27 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>StudySpot 📚</h1>
-            <p>Find and book a study room on campus easily and smoothly.</p>
-        </header>
+   <div class="container">
+    <header>
+        <h1>StudySpot 📚</h1>
+        <p>Find and book a study room on campus easily and smoothly.</p>
+    </header>
 
-        <!-- Search field -->
-        <section class="search-section">
-            <input type="text" id="searchInput" placeholder="Search study rooms...">
-        </section>
-
-        <!-- Room list -->
-        <section class="rooms-section">
-            <h2>Available Study Rooms</h2>
-            <div id="roomList" class="room-grid">
-                <!-- Rooms will be loaded dynamically via JavaScript -->
-            </div>
-        </section>
+    <!-- Sök och datumväljare samlat här -->
+    <div class="search-section">
+        <input type="text" id="searchInput" placeholder="Search study rooms..." oninput="filterRooms()">
+        <br><br>
+        <label for="dateFilter"><strong>Select date: </strong></label>
+        <input type="date" id="dateFilter" onchange="fetchRoomsForDate()">
     </div>
+
+    <section class="rooms-section">
+        <h2>Available Study Rooms</h2>
+        <div id="roomList" class="room-grid">
+            <!-- Rooms will be loaded dynamically via JavaScript -->
+        </div>
+    </section>
+</div>
 
     <script src="script.js"></script>
 </body>
