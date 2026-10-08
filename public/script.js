@@ -6,7 +6,7 @@ let selectedRoomId = null;
 let selectedRoomName = null;
 let selectedDate = null;
 let currentAuthMode = 'login'; // 'login' eller 'register'
-let loggedInUser = localStorage.getItem('studySpotUser') || null;
+let loggedInUser = sessionStorage.getItem('studySpotSessionUser') || null;
 
 document.addEventListener('DOMContentLoaded', () => {
     const today = new Date().toISOString().split('T')[0];
@@ -130,7 +130,7 @@ async function handleAuthSubmit(event) {
                 alert('Logged in successfully!');
             }
             loggedInUser = username;
-            localStorage.setItem('studySpotUser', username);
+            sessionStorage.setItem('studySpotSessionUser', username);
             updateAuthUI();
             closeAuthModal();
         } else {
@@ -144,7 +144,7 @@ async function handleAuthSubmit(event) {
 
 function logout() {
     loggedInUser = null;
-    localStorage.removeItem('studySpotUser');
+    sessionStorage.removeItem('studySpotSessionUser');
     updateAuthUI();
     alert('Logged out successfully.');
 }
