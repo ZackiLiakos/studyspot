@@ -1,13 +1,14 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
+const bcrypt = require('bcrypt');
 const app = express();
 const PORT = 3000;
 
 // Middleware
 app.use(express.json());
-app.use(express.static('public')); // Gör så att filer i 'public'-mappen visas
+app.use(express.static('public'));
 
-// Anslut till SQLite-databas (skapar en fil som heter database.sqlite)
+// Anslut till SQLite-databas
 const db = new sqlite3.Database('./database.sqlite', (err) => {
     if (err) {
         console.error('Kunde inte ansluta till databasen:', err.message);
@@ -17,17 +18,16 @@ const db = new sqlite3.Database('./database.sqlite', (err) => {
     }
 });
 
-// Funktion som skapar tabellerna (Users, Rooms, Bookings) om de inte finns
+// Funktion som skapar tabellerna om de inte finns
 function createTables() {
     db.serialize(() => {
-        // 1. Användartabell
         db.run(`CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
             role TEXT DEFAULT 'user'
         )`);
 
-        // 2. Studierumstabell (med floor-kolumnen tillagd!)
         db.run(`CREATE TABLE IF NOT EXISTS rooms (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -36,7 +36,6 @@ function createTables() {
             floor INTEGER
         )`);
 
-        // 3. Bokningstabell med kopplingar (Foreign Keys)
         db.run(`CREATE TABLE IF NOT EXISTS bookings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
@@ -50,13 +49,13 @@ function createTables() {
                 console.error('Fel vid skapande av tabeller:', err.message);
             } else {
                 console.log('Alla databastabeller är skapade eller kontrollerade!');
-                seedData(); // Kör testdata när tabellerna är klara
+                seedData();
             }
         });
     });
 }
 
-// Funktion som lägger till lite testdata automatiskt om det är tomt
+// Funktion som lägger till testdata om det är tomt
 function seedData() {
     db.get("SELECT COUNT(*) as count FROM rooms", (err, row) => {
         if (row && row.count === 0) {
@@ -91,13 +90,9 @@ app.get('/api/rooms', (req, res) => {
     const sql = 'SELECT * FROM rooms';
     db.all(sql, [], (err, rows) => {
         if (err) {
-            res.status(500).json({ error: err.message });
-            return;
+            return res.status(500).json({ error: err.message });
         }
-        res.json({
-            message: 'success',
-            data: rows
-        });
+        res.json({ message: 'success', data: rows });
     });
 });
 
@@ -105,78 +100,15 @@ app.get('/api/rooms', (req, res) => {
 app.post('/api/rooms', (req, res) => {
     const { name, capacity, features, floor } = req.body;
     const sql = 'INSERT INTO rooms (name, capacity, features, floor) VALUES (?, ?, ?, ?)';
-    const params = [name, capacity, features, floor];
-    
-    db.run(sql, params, function (err) {
+    db.run(sql, [name, capacity, features, floor], function (err) {
         if (err) {
-            res.status(400).json({ error: err.message });
-            return;
+            return res.status(400).json({ error: err.message });
         }
-        res.json({
-            message: 'success',
-            data: { id: this.lastID, name, capacity, features, floor }
-        });
+        res.json({ message: 'success', data: { id: this.lastID, name, capacity, features, floor } });
     });
 });
 
-// 3. Hämta alla användare (GET)
-app.get('/api/users', (req, res) => {
-    const sql = 'SELECT * FROM users';
-    db.all(sql, [], (err, rows) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        res.json({
-            message: 'success',
-            data: rows
-        });
-    });
-});
-
-// 4. Lägg till en användare (POST)
-app.post('/api/users', (req, res) => {
-    const { username, role } = req.body;
-    const sql = 'INSERT INTO users (username, role) VALUES (?, ?)';
-    db.run(sql, [username, role || 'user'], function(err) {
-        if (err) {
-            res.status(400).json({ error: err.message });
-            return;
-        }
-        res.json({
-            message: 'success',
-            data: { id: this.lastID, username, role: role || 'user' }
-        });
-    });
-});
-
-// Skapa tabeller om de inte finns
-db.run(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE,
-    password TEXT
-)`);
-
-db.run(`CREATE TABLE IF NOT EXISTS rooms (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    floor TEXT,
-    capacity INTEGER,
-    features TEXT
-)`);
-
-db.run(`CREATE TABLE IF NOT EXISTS bookings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    room_id INTEGER,
-    username TEXT,
-    date TEXT,
-    time_slot TEXT,
-    FOREIGN KEY(room_id) REFERENCES rooms(id)
-)`);
-
-const bcrypt = require('bcrypt');
-
-// Registrera ny användare
+// 3. Registrera ny användare (POST)
 app.post('/api/register', async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
@@ -188,18 +120,16 @@ app.post('/api/register', async (req, res) => {
         const sql = 'INSERT INTO users (username, password) VALUES (?, ?)';
         db.run(sql, [username, hashedPassword], function(err) {
             if (err) {
-                console.error("SQL error during registration:", err.message);
-                return res.status(400).json({ error: 'Database error: ' + err.message });
+                return res.status(400).json({ error: 'Username is already taken or database error.' });
             }
             res.json({ message: 'success', userId: this.lastID });
         });
     } catch (e) {
-        console.error("Crash in register:", e);
-        res.status(500).json({ error: 'Server error during registration: ' + e.message });
+        res.status(500).json({ error: 'Server error during registration.' });
     }
 });
 
-// Logga in användare
+// 4. Logga in användare (POST)
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
@@ -221,7 +151,6 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-
 // 5. Hämta alla bokningar (GET)
 app.get('/api/bookings', (req, res) => {
     const sql = `
@@ -232,41 +161,47 @@ app.get('/api/bookings', (req, res) => {
     `;
     db.all(sql, [], (err, rows) => {
         if (err) {
-            res.status(500).json({ error: err.message });
-            return;
+            return res.status(500).json({ error: err.message });
         }
-        res.json({
-            message: 'success',
-            data: rows
-        });
+        res.json({ message: 'success', data: rows });
     });
 });
 
-// 6. Skapa en bokning (POST)
+// 6. Skapa en bokning (POST) - Tar emot username och letar upp user_id
 app.post('/api/bookings', (req, res) => {
-    const { user_id, room_id, date, time_slot } = req.body;
+    const { username, room_id, date, time_slot } = req.body;
 
-    // 1. Kolla om användaren redan har en bokning samma datum
-    const checkSql = 'SELECT * FROM bookings WHERE user_id = ? AND date = ?';
-    db.get(checkSql, [user_id, date], (err, row) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
+    if (!username || !room_id || !date || !time_slot) {
+        return res.status(400).json({ error: 'All fields are required.' });
+    }
+
+    db.get('SELECT id FROM users WHERE username = ?', [username], (err, user) => {
+        if (err || !user) {
+            return res.status(400).json({ error: 'User not found.' });
         }
 
-        if (row) {
-            // Om det redan finns en bokning, avbryt och skicka felmeddelande
-            return res.status(400).json({ error: 'You can only make one booking per day!' });
-        }
+        const user_id = user.id;
 
-        // 2. Om ingen bokning finns, spara den nya bokningen
-        const insertSql = 'INSERT INTO bookings (user_id, room_id, date, time_slot) VALUES (?, ?, ?, ?)';
-        db.run(insertSql, [user_id, room_id, date, time_slot], function(err) {
+        // Kolla om användaren redan har bokat detta datum
+        const checkSql = 'SELECT * FROM bookings WHERE user_id = ? AND date = ?';
+        db.get(checkSql, [user_id, date], (err, row) => {
             if (err) {
-                return res.status(400).json({ error: err.message });
+                return res.status(500).json({ error: err.message });
             }
-            res.json({
-                message: 'success',
-                data: { id: this.lastID, user_id, room_id, date, time_slot }
+
+            if (row) {
+                return res.status(400).json({ error: 'You can only make one booking per day!' });
+            }
+
+            const insertSql = 'INSERT INTO bookings (user_id, room_id, date, time_slot) VALUES (?, ?, ?, ?)';
+            db.run(insertSql, [user_id, room_id, date, time_slot], function(err) {
+                if (err) {
+                    return res.status(400).json({ error: err.message });
+                }
+                res.json({
+                    message: 'success',
+                    data: { id: this.lastID, user_id, room_id, date, time_slot }
+                });
             });
         });
     });
@@ -279,11 +214,9 @@ app.get('/api/bookings/date/:date', (req, res) => {
     
     db.all(sql, [targetDate], (err, rows) => {
         if (err) {
-            res.status(500).json({ error: err.message });
-            return;
+            return res.status(500).json({ error: err.message });
         }
         
-        // Gruppera bokade tider per rum-id (t.ex. { 4: ['6-9'] })
         const roomBookings = {};
         rows.forEach(row => {
             if (!roomBookings[row.room_id]) {
@@ -292,14 +225,11 @@ app.get('/api/bookings/date/:date', (req, res) => {
             roomBookings[row.room_id].push(row.time_slot);
         });
 
-        res.json({
-            message: 'success',
-            roomBookings: roomBookings
-        });
+        res.json({ message: 'success', roomBookings: roomBookings });
     });
 });
 
-// 8. Hämta bokningar för en specifik användare (Krävs för "My Bookings")
+// 8. Hämta bokningar för en specifik användare (GET)
 app.get('/api/user-bookings/:username', (req, res) => {
     const sql = `
         SELECT bookings.id, bookings.date, bookings.time_slot, rooms.name AS room_name, users.username
@@ -310,19 +240,17 @@ app.get('/api/user-bookings/:username', (req, res) => {
     `;
     db.all(sql, [req.params.username], (err, rows) => {
         if (err) {
-            res.status(500).json({ error: err.message });
-            return;
+            return res.status(500).json({ error: err.message });
         }
         res.json(rows);
     });
 });
 
-// 9. Ta bort (avboka) en bokning (Krävs för avbokningsknappen)
+// 9. Ta bort (avboka) en bokning (DELETE)
 app.delete('/api/bookings/:id', (req, res) => {
     db.run("DELETE FROM bookings WHERE id = ?", [req.params.id], function(err) {
         if (err) {
-            res.status(500).json({ error: err.message });
-            return;
+            return res.status(500).json({ error: err.message });
         }
         res.json({ success: true });
     });
