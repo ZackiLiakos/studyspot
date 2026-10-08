@@ -5,6 +5,8 @@ let selectedDateGlobal = '';
 let selectedRoomId = null;
 let selectedRoomName = null;
 let selectedDate = null;
+let currentAuthMode = 'login'; // 'login' eller 'register'
+let loggedInUser = localStorage.getItem('studySpotUser') || null;
 
 document.addEventListener('DOMContentLoaded', () => {
     const today = new Date().toISOString().split('T')[0];
@@ -13,6 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
         dateInput.value = today;
         selectedDateGlobal = today;
     }
+    
+    updateAuthUI();
     fetchRoomsForDate();
 
     const closeBtn = document.querySelector('.close-time');
@@ -22,36 +26,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Hantera klick på tids-knapparna i modalen
     document.querySelectorAll('.time-btn').forEach(button => {
         button.addEventListener('click', async () => {
+            if (!loggedInUser) {
+                alert('You must be logged in to book a room.');
+                openAuthModal('login');
+                return;
+            }
+
             const timeSlot = button.getAttribute('data-time');
-            
-            const username = prompt("Enter your username to book:");
-            if (!username) return;
 
             try {
-                let userRes = await fetch(`${API_URL}/users`);
-                let usersData = await userRes.json();
-                let user = usersData.data.find(u => u.username === username);
-
-                let userId;
-                if (!user) {
-                    const createUserRes = await fetch(`${API_URL}/users`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username: username, role: 'user' })
-                    });
-                    const createdUserData = await createUserRes.json();
-                    userId = createdUserData.data.id;
-                } else {
-                    userId = user.id;
-                }
-
                 const bookingRes = await fetch(`${API_URL}/bookings`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        user_id: userId,
+                        username: loggedInUser,
                         room_id: selectedRoomId,
                         date: selectedDate,
                         time_slot: timeSlot
@@ -73,6 +64,92 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+// --- AUTENTISERING & UI ---
+
+function updateAuthUI() {
+    const loggedOutView = document.getElementById('loggedOutView');
+    const loggedInView = document.getElementById('loggedInView');
+    const usernameDisplay = document.getElementById('currentUsernameDisplay');
+
+    if (loggedInUser) {
+        if (loggedOutView) loggedOutView.style.display = 'none';
+        if (loggedInView) loggedInView.style.display = 'block';
+        if (usernameDisplay) usernameDisplay.innerText = loggedInUser;
+    } else {
+        if (loggedOutView) loggedOutView.style.display = 'block';
+        if (loggedInView) loggedInView.style.display = 'none';
+    }
+}
+
+function openAuthModal(mode) {
+    currentAuthMode = mode;
+    const modal = document.getElementById('authModal');
+    const title = document.getElementById('authModalTitle');
+    const submitBtn = document.getElementById('authSubmitBtn');
+
+    if (mode === 'login') {
+        title.innerText = 'Log In';
+        submitBtn.innerText = 'Log In';
+        submitBtn.style.backgroundColor = '#3498db';
+    } else {
+        title.innerText = 'Register Account';
+        submitBtn.innerText = 'Register';
+        submitBtn.style.backgroundColor = '#2ecc71';
+    }
+
+    document.getElementById('authUsername').value = '';
+    document.getElementById('authPassword').value = '';
+    modal.style.display = 'block';
+}
+
+function closeAuthModal() {
+    document.getElementById('authModal').style.display = 'none';
+}
+
+async function handleAuthSubmit(event) {
+    event.preventDefault();
+    const username = document.getElementById('authUsername').value.trim();
+    const password = document.getElementById('authPassword').value;
+
+    const endpoint = currentAuthMode === 'login' ? `${API_URL}/login` : `${API_URL}/register`;
+
+    try {
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            if (currentAuthMode === 'register') {
+                alert('Account created successfully! You are now logged in.');
+            } else {
+                alert('Logged in successfully!');
+            }
+            loggedInUser = username;
+            localStorage.setItem('studySpotUser', username);
+            updateAuthUI();
+            closeAuthModal();
+        } else {
+            alert(data.error || 'Authentication failed.');
+        }
+    } catch (err) {
+        console.error('Error during auth:', err);
+        alert('An error occurred. Please check server connection.');
+    }
+}
+
+function logout() {
+    loggedInUser = null;
+    localStorage.removeItem('studySpotUser');
+    updateAuthUI();
+    alert('Logged out successfully.');
+}
+
+// --- RUM OCH BOKNINGAR ---
 
 async function fetchRoomsForDate() {
     const dateInput = document.getElementById('dateFilter');
@@ -184,6 +261,12 @@ function displayRooms(rooms, selectedDate) {
 }
 
 function bookRoom(roomId, roomName, date, bookedSlotsEncoded) {
+    if (!loggedInUser) {
+        alert('Please log in first to book a room.');
+        openAuthModal('login');
+        return;
+    }
+
     selectedRoomId = roomId;
     selectedRoomName = roomName;
     selectedDate = date;
@@ -198,15 +281,13 @@ function bookRoom(roomId, roomName, date, bookedSlotsEncoded) {
     document.getElementById('modalRoomName').innerText = roomName;
     document.getElementById('modalDate').innerText = date;
 
-    // Gå igenom alla tids-knappar och dölj de som redan är bokade
     document.querySelectorAll('.time-btn').forEach(button => {
         const timeSlot = button.getAttribute('data-time');
         
         if (bookedSlots.includes(timeSlot)) {
-            button.style.display = 'none'; // Dölj den bokade tiden helt
+            button.style.display = 'none';
         } else {
-            button.style.display = 'block'; // Visa lediga tider
-            // Återställ texten ifall den ändrats tidigare
+            button.style.display = 'block';
             if (timeSlot === '6-9') button.innerText = '06:00 - 09:00';
             if (timeSlot === '9-12') button.innerText = '09:00 - 12:00';
             if (timeSlot === '12-15') button.innerText = '12:00 - 15:00';
@@ -219,6 +300,12 @@ function bookRoom(roomId, roomName, date, bookedSlotsEncoded) {
 }
 
 function openMyBookingsModal() {
+    if (!loggedInUser) {
+        alert('Please log in to view your bookings.');
+        openAuthModal('login');
+        return;
+    }
+    fetchUserBookings();
     document.getElementById('myBookingsModal').style.display = 'block';
 }
 
@@ -227,21 +314,15 @@ function closeMyBookingsModal() {
 }
 
 async function fetchUserBookings() {
-    const username = document.getElementById('usernameInput').value.trim();
     const listContainer = document.getElementById('userBookingsList');
     listContainer.innerHTML = '';
 
-    if (!username) {
-        listContainer.innerHTML = '<p style="color:red;">Please enter a username.</p>';
-        return;
-    }
-
     try {
-        const res = await fetch(`${API_URL}/user-bookings/${username}`);
+        const res = await fetch(`${API_URL}/user-bookings/${loggedInUser}`);
         const bookings = await res.json();
 
         if (bookings.length === 0) {
-            listContainer.innerHTML = '<p>No bookings found for this user.</p>';
+            listContainer.innerHTML = '<p>No bookings found for your account.</p>';
             return;
         }
 

@@ -3,67 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StudySpot - Find and Book Study Rooms</title>
+    <title>StudySpot - Study Room Booking</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <header>
+    <!-- Inloggnings- och användarsektion -->
+    <header class="main-header">
         <h1>StudySpot 📚</h1>
         <p>Find and book a study room on campus easily and smoothly.</p>
-        <button id="myBookingsBtn" onclick="openMyBookingsModal()">My Bookings</button>
+        
+        <div id="authContainer" style="margin: 15px 0;">
+            <!-- Visas om användaren INTE är inloggad -->
+            <div id="loggedOutView">
+                <button onclick="openAuthModal('login')" style="background-color: #3498db; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px;">Log In</button>
+                <button onclick="openAuthModal('register')" style="background-color: #2ecc71; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px;">Register</button>
+            </div>
+            <!-- Visas om användaren ÄR inloggad -->
+            <div id="loggedInView" style="display: none;">
+                <span>Logged in as: <strong id="currentUsernameDisplay"></strong></span>
+                <button onclick="logout()" style="background-color: #e74c3c; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; margin-left: 10px;">Log Out</button>
+            </div>
+        </div>
+
+        <button onclick="openMyBookingsModal()">My Bookings</button>
     </header>
 
-    <main>
-        <!-- Filter och söksektion -->
-        <div class="filter-container" style="margin: 20px auto; text-align: center;">
+    <main class="container">
+        <div class="filters">
             <input type="text" id="searchInput" placeholder="Search study rooms..." oninput="filterRooms()">
             
-            <!-- Våningsplans-filter -->
             <select id="floorFilter" onchange="filterRooms()">
                 <option value="">All Floors</option>
                 <option value="1">Floor 1</option>
                 <option value="2">Floor 2</option>
                 <option value="3">Floor 3</option>
-                <option value="3">Floor 4</option>
             </select>
 
             <input type="date" id="dateFilter" onchange="fetchRoomsForDate()">
         </div>
 
-        <section>
-            <h2>Available Study Rooms</h2>
-            <div id="roomList" class="room-grid"></div>
-        </section>
+        <h2>Available Study Rooms</h2>
+        <div id="roomList" class="room-grid">
+            <!-- Rum laddas dynamiskt här -->
+        </div>
     </main>
 
-    <!-- Modal för "My Bookings" -->
-    <div id="myBookingsModal" class="modal" style="display:none;">
+    <!-- Modal för Tidsbokning -->
+    <div id="timeModal" class="modal" style="display: none;">
         <div class="modal-content">
-            <span class="close" onclick="closeMyBookingsModal()">&times;</span>
-            <h2>My Bookings 📚</h2>
-            <label for="usernameInput">Username:</label>
-            <input type="text" id="usernameInput" placeholder="Enter your username">
-            <button onclick="fetchUserBookings()">Search bookings</button>
-            <div id="userBookingsList"></div>
+            <span class="close-time">&times;</span>
+            <h3 id="modalRoomName">Room Name</h3>
+            <p>Date: <span id="modalDate"></span></p>
+            <p>Select Time Slot:</p>
+            <div class="time-slots">
+                <button class="time-btn" data-time="6-9">06:00 - 09:00</button>
+                <button class="time-btn" data-time="9-12">09:00 - 12:00</button>
+                <button class="time-btn" data-time="12-15">12:00 - 15:00</button>
+                <button class="time-btn" data-time="15-18">15:00 - 18:00</button>
+                <button class="time-btn" data-time="18-21">18:00 - 21:00</button>
+            </div>
         </div>
     </div>
 
-    <!-- Tidsvals-modal -->
-<div id="timeModal" class="modal">
-    <div class="modal-content">
-        <span class="close-time">&times;</span>
-        <h3>Select Time Slot for <span id="modalRoomName"></span></h3>
-        <p>Date: <span id="modalDate"></span></p>
-        <div id="timeSlotsContainer" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
-            <button class="time-btn" data-time="6-9">06:00 - 09:00</button>
-            <button class="time-btn" data-time="9-12">09:00 - 12:00</button>
-            <button class="time-btn" data-time="12-15">12:00 - 15:00</button>
-            <button class="time-btn" data-time="15-18">15:00 - 18:00</button>
-            <button class="time-btn" data-time="18-21">18:00 - 21:00</button>
+    <!-- Modal för Inloggning / Registrering -->
+    <div id="authModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px;">
+            <span onclick="closeAuthModal()" style="float: right; cursor: pointer; font-size: 20px;">&times;</span>
+            <h2 id="authModalTitle">Log In</h2>
+            <form id="authForm" onsubmit="handleAuthSubmit(event)">
+                <div style="margin: 15px 0;">
+                    <label for="authUsername">Username:</label><br>
+                    <input type="text" id="authUsername" required style="width: 100%; padding: 8px; margin-top: 5px;">
+                </div>
+                <div style="margin: 15px 0;">
+                    <label for="authPassword">Password:</label><br>
+                    <input type="password" id="authPassword" required style="width: 100%; padding: 8px; margin-top: 5px;">
+                </div>
+                <button type="submit" id="authSubmitBtn" style="background-color: #3498db; color: white; border: none; padding: 10px 15px; width: 100%; cursor: pointer; border-radius: 4px;">Log In</button>
+            </form>
         </div>
     </div>
-</div>
+
+    <!-- Modal för "Mina bokningar" -->
+    <div id="myBookingsModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span onclick="closeMyBookingsModal()" style="float: right; cursor: pointer; font-size: 20px;">&times;</span>
+            <h2>My Bookings 📚</h2>
+            <div id="userBookingsList">
+                <!-- Användarens bokningar laddas här -->
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>

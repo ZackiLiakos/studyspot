@@ -150,6 +150,76 @@ app.post('/api/users', (req, res) => {
     });
 });
 
+// Skapa tabeller om de inte finns
+db.run(`CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    password TEXT
+)`);
+
+db.run(`CREATE TABLE IF NOT EXISTS rooms (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    floor TEXT,
+    capacity INTEGER,
+    features TEXT
+)`);
+
+db.run(`CREATE TABLE IF NOT EXISTS bookings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    room_id INTEGER,
+    username TEXT,
+    date TEXT,
+    time_slot TEXT,
+    FOREIGN KEY(room_id) REFERENCES rooms(id)
+)`);
+
+const bcrypt = require('bcrypt');
+
+// Registrera ny användare
+app.post('/api/register', async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password required.' });
+    }
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const sql = 'INSERT INTO users (username, password) VALUES (?, ?)';
+        db.run(sql, [username, hashedPassword], function(err) {
+            if (err) {
+                return res.status(400).json({ error: 'The username is taken..' });
+            }
+            res.json({ message: 'success', userId: this.lastID });
+        });
+    } catch (e) {
+        res.status(500).json({ error: 'Server error during registration.' });
+    }
+});
+
+// Logga in användare
+app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password required.' });
+    }
+
+    const sql = 'SELECT * FROM users WHERE username = ?';
+    db.get(sql, [username], async (err, user) => {
+        if (err || !user) {
+            return res.status(400).json({ error: 'Incorrect username or password.' });
+        }
+
+        const match = await bcrypt.compare(password, user.password);
+        if (match) {
+            res.json({ message: 'success', username: user.username });
+        } else {
+            res.status(400).json({ error: 'Incorrect username or password.' });
+        }
+    });
+});
+
+
 // 5. Hämta alla bokningar (GET)
 app.get('/api/bookings', (req, res) => {
     const sql = `
