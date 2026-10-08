@@ -180,7 +180,7 @@ const bcrypt = require('bcrypt');
 app.post('/api/register', async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
-        return res.status(400).json({ error: 'Username and password required.' });
+        return res.status(400).json({ error: 'Username and password are required.' });
     }
 
     try {
@@ -188,12 +188,14 @@ app.post('/api/register', async (req, res) => {
         const sql = 'INSERT INTO users (username, password) VALUES (?, ?)';
         db.run(sql, [username, hashedPassword], function(err) {
             if (err) {
-                return res.status(400).json({ error: 'The username is taken..' });
+                console.error("SQL error during registration:", err.message);
+                return res.status(400).json({ error: 'Database error: ' + err.message });
             }
             res.json({ message: 'success', userId: this.lastID });
         });
     } catch (e) {
-        res.status(500).json({ error: 'Server error during registration.' });
+        console.error("Crash in register:", e);
+        res.status(500).json({ error: 'Server error during registration: ' + e.message });
     }
 });
 
