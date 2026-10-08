@@ -198,19 +198,15 @@ function bookRoom(roomId, roomName, date, bookedSlotsEncoded) {
     document.getElementById('modalRoomName').innerText = roomName;
     document.getElementById('modalDate').innerText = date;
 
+    // Gå igenom alla tids-knappar och dölj de som redan är bokade
     document.querySelectorAll('.time-btn').forEach(button => {
         const timeSlot = button.getAttribute('data-time');
+        
         if (bookedSlots.includes(timeSlot)) {
-            button.disabled = true;
-            button.style.backgroundColor = '#ccc';
-            button.style.cursor = 'not-allowed';
-            if (!button.innerText.includes('(Booked)')) {
-                button.innerText += ' (Booked)';
-            }
+            button.style.display = 'none'; // Dölj den bokade tiden helt
         } else {
-            button.disabled = false;
-            button.style.backgroundColor = '#2ecc71';
-            button.style.cursor = 'pointer';
+            button.style.display = 'block'; // Visa lediga tider
+            // Återställ texten ifall den ändrats tidigare
             if (timeSlot === '6-9') button.innerText = '06:00 - 09:00';
             if (timeSlot === '9-12') button.innerText = '09:00 - 12:00';
             if (timeSlot === '12-15') button.innerText = '12:00 - 15:00';
