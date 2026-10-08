@@ -49,6 +49,22 @@
         </div>
     </div>
 
+    <!-- Tidsvals-modal -->
+<div id="timeModal" class="modal">
+    <div class="modal-content">
+        <span class="close-time">&times;</span>
+        <h3>Select Time Slot for <span id="modalRoomName"></span></h3>
+        <p>Date: <span id="modalDate"></span></p>
+        <div id="timeSlotsContainer" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+            <button class="time-btn" data-time="6-9">06:00 - 09:00</button>
+            <button class="time-btn" data-time="9-12">09:00 - 12:00</button>
+            <button class="time-btn" data-time="12-15">12:00 - 15:00</button>
+            <button class="time-btn" data-time="15-18">15:00 - 18:00</button>
+            <button class="time-btn" data-time="18-21">18:00 - 21:00</button>
+        </div>
+    </div>
+</div>
+
     <script src="script.js"></script>
 </body>
 </html>
