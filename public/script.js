@@ -212,18 +212,18 @@ async function fetchUserBookings() {
                 <p><strong>Rum:</strong> ${b.room_name}</p>
                 <p><strong>Datum:</strong> ${b.date}</p>
                 <p><strong>Tid:</strong> ${b.time_slot}</p>
-                <button onclick="cancelBooking(${b.id})" style="background-color: red; color: white; border: none; padding: 5px 10px; cursor: pointer;">Avboka</button>
+                <button onclick="cancelBooking(${b.id})" style="background-color: red; color: white; border: none; padding: 5px 10px; cursor: pointer;">Cancel</button>
             `;
             listContainer.appendChild(div);
         });
     } catch (err) {
-        console.error('Fel vid hämtning av bokningar:', err);
-        listContainer.innerHTML = '<p style="color:red;">Ett fel uppstod vid hämtning.</p>';
+        console.error('Error retrieving bookings:', err);
+        listContainer.innerHTML = '<p style="color:red;">An error occurred during retrieval.</p>';
     }
 }
 
 async function cancelBooking(bookingId) {
-    if (!confirm('Är du säker på att du vill avboka?')) return;
+    if (!confirm('Are you sure you want to cancel?')) return;
 
     try {
         const res = await fetch(`${API_URL}/bookings/${bookingId}`, {
@@ -231,13 +231,13 @@ async function cancelBooking(bookingId) {
         });
 
         if (res.ok) {
-            alert('Bokningen har tagits bort.');
+            alert('The booking has been removed.');
             fetchUserBookings(); // Uppdatera modalen
             fetchRoomsForDate(); // Uppdatera huvudvyn
         } else {
-            alert('Kunde inte avboka.');
+            alert('Could not cancel.');
         }
     } catch (err) {
-        console.error('Fel vid avbokning:', err);
+        console.error('Error during cancellation:', err);
     }
 }
