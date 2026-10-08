@@ -173,15 +173,29 @@ app.get('/api/bookings', (req, res) => {
 // 6. Skapa en bokning (POST)
 app.post('/api/bookings', (req, res) => {
     const { user_id, room_id, date, time_slot } = req.body;
-    const sql = 'INSERT INTO bookings (user_id, room_id, date, time_slot) VALUES (?, ?, ?, ?)';
-    db.run(sql, [user_id, room_id, date, time_slot], function(err) {
+
+    // 1. Kolla om användaren redan har en bokning samma datum
+    const checkSql = 'SELECT * FROM bookings WHERE user_id = ? AND date = ?';
+    db.get(checkSql, [user_id, date], (err, row) => {
         if (err) {
-            res.status(400).json({ error: err.message });
-            return;
+            return res.status(500).json({ error: err.message });
         }
-        res.json({
-            message: 'success',
-            data: { id: this.lastID, user_id, room_id, date, time_slot }
+
+        if (row) {
+            // Om det redan finns en bokning, avbryt och skicka felmeddelande
+            return res.status(400).json({ error: 'You can only make one booking per day!' });
+        }
+
+        // 2. Om ingen bokning finns, spara den nya bokningen
+        const insertSql = 'INSERT INTO bookings (user_id, room_id, date, time_slot) VALUES (?, ?, ?, ?)';
+        db.run(insertSql, [user_id, room_id, date, time_slot], function(err) {
+            if (err) {
+                return res.status(400).json({ error: err.message });
+            }
+            res.json({
+                message: 'success',
+                data: { id: this.lastID, user_id, room_id, date, time_slot }
+            });
         });
     });
 });
