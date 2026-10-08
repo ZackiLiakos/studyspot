@@ -201,21 +201,26 @@ app.post('/api/bookings', (req, res) => {
 });
 
 // 7. Hämta bokade rum för ett specifikt datum (GET)
-app.get('/api/bookings/date/:date', (req, res) => {
-    const targetDate = req.params.date;
-    const sql = 'SELECT room_id FROM bookings WHERE date = ?';
-    
-    db.all(sql, [targetDate], (err, rows) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        const bookedRoomIds = rows.map(row => row.room_id);
-        res.json({
-            message: 'success',
-            bookedRoomIds: bookedRoomIds
+app.get('/api/bookings/date/:date', async (req, res) => {
+    const { date } = req.params;
+    try {
+        // Hämta alla bokningar för detta datum
+        const bookings = await db.all('SELECT room_id, time_slot FROM bookings WHERE date = ?', [date]);
+        
+        // Skapa ett objekt eller en struktur där vi grupperar bokade tider per rum, t.ex:
+        // { roomId: ['6-9', '9-12'] }
+        const roomBookings = {};
+        bookings.forEach(b => {
+            if (!roomBookings[b.room_id]) {
+                roomBookings[b.room_id] = [];
+            }
+            roomBookings[b.room_id].push(b.time_slot);
         });
-    });
+
+        res.json({ roomBookings });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // 8. Hämta bokningar för en specifik användare (Krävs för "My Bookings")

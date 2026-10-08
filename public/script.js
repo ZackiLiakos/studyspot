@@ -85,11 +85,11 @@ async function fetchRoomsForDate() {
 
         const bookedRes = await fetch(`${API_URL}/bookings/date/${selectedDateGlobal}`);
         const bookedData = await bookedRes.json();
-        const bookedRoomIds = bookedData.bookedRoomIds || [];
+        const roomBookings = bookedData.roomBookings || {};
 
         currentRooms = currentRooms.map(room => ({
             ...room,
-            isBooked: bookedRoomIds.includes(room.id)
+            bookedSlots: roomBookings[room.id] || []
         }));
 
         filterRooms();
@@ -161,11 +161,15 @@ function displayRooms(rooms, selectedDate) {
         const card = document.createElement('div');
         card.classList.add('room-card');
         
+        const allSlots = ['6-9', '9-12', '12-15', '15-18', '18-21'];
+        const isFullyBooked = allSlots.every(slot => room.bookedSlots.includes(slot));
+
         let buttonHTML = '';
-        if (room.isBooked) {
-            buttonHTML = `<button disabled style="background-color: gray; cursor: not-allowed;">Already Booked</button>`;
+        if (isFullyBooked) {
+            buttonHTML = `<button disabled style="background-color: gray; cursor: not-allowed;">Fully Booked</button>`;
         } else {
-            buttonHTML = `<button onclick="bookRoom(${room.id}, '${room.name}', '${selectedDate}')">Book for ${selectedDate}</button>`;
+            const bookedSlotsStr = encodeURIComponent(JSON.stringify(room.bookedSlots));
+            buttonHTML = `<button onclick="bookRoom(${room.id}, '${room.name}', '${selectedDate}', '${bookedSlotsStr}')">Book Time Slot</button>`;
         }
 
         card.innerHTML = `
@@ -179,13 +183,42 @@ function displayRooms(rooms, selectedDate) {
     });
 }
 
-function bookRoom(roomId, roomName, date) {
+function bookRoom(roomId, roomName, date, bookedSlotsEncoded) {
     selectedRoomId = roomId;
     selectedRoomName = roomName;
     selectedDate = date;
 
+    let bookedSlots = [];
+    try {
+        bookedSlots = JSON.parse(decodeURIComponent(bookedSlotsEncoded));
+    } catch (e) {
+        bookedSlots = [];
+    }
+
     document.getElementById('modalRoomName').innerText = roomName;
     document.getElementById('modalDate').innerText = date;
+
+    document.querySelectorAll('.time-btn').forEach(button => {
+        const timeSlot = button.getAttribute('data-time');
+        if (bookedSlots.includes(timeSlot)) {
+            button.disabled = true;
+            button.style.backgroundColor = '#ccc';
+            button.style.cursor = 'not-allowed';
+            if (!button.innerText.includes('(Booked)')) {
+                button.innerText += ' (Booked)';
+            }
+        } else {
+            button.disabled = false;
+            button.style.backgroundColor = '#2ecc71';
+            button.style.cursor = 'pointer';
+            if (timeSlot === '6-9') button.innerText = '06:00 - 09:00';
+            if (timeSlot === '9-12') button.innerText = '09:00 - 12:00';
+            if (timeSlot === '12-15') button.innerText = '12:00 - 15:00';
+            if (timeSlot === '15-18') button.innerText = '15:00 - 18:00';
+            if (timeSlot === '18-21') button.innerText = '18:00 - 21:00';
+        }
+    });
+
     document.getElementById('timeModal').style.display = 'block';
 }
 
