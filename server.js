@@ -70,14 +70,14 @@ function seedData() {
             db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2214', 8, 'Projector', 2)`);
             db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2311', 12, 'Computer room', 3)`);
             db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2312', 8, 'Glassed in', 3)`);
-            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2312', 4, 'Glassed in', 3)`);
-            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2313', 4, 'Quiet area', 3)`);
-            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2314', 4, 'Projector', 3)`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2313', 4, 'Glassed in', 3)`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2314', 4, 'Quiet area', 3)`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2315', 4, 'Projector', 3)`);
             db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2411', 6, 'Computer room', 4)`);
             db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2412', 10, 'Projector', 4)`);
             db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2413', 4, 'Quiet area, Whiteboard', 4)`);
             db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2414', 2, 'Projector, Glassed in', 4)`);
-            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2412', 6, 'Projector', 4)`);
+            db.run(`INSERT INTO rooms (name, capacity, features, floor) VALUES ('Room E2415', 6, 'Projector', 4)`);
 
             console.log('Testrum tillagda med våningsplan!');
         }
